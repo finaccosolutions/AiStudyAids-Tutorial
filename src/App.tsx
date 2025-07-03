@@ -19,6 +19,14 @@ import ProfilePage from './pages/ProfilePage';
 import CompetitionPage from './pages/CompetitionPage';
 import AiTutorialPage from './pages/AiTutorialPage';
 
+// New imports for AI Tutorial
+import Dashboard from './pages/Dashboard';
+import Lesson from './pages/Lesson';
+import Onboarding from './pages/Onboarding';
+import { UserPreferencesProvider } from './components/contexts/UserPreferencesContext';
+import { LessonProvider } from './components/contexts/LessonContext';
+
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoggedIn, isLoading } = useAuthStore();
   const location = useLocation();
@@ -78,7 +86,26 @@ const App: React.FC = () => {
         <Route path="chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="competitions" element={<ProtectedRoute><CompetitionPage /></ProtectedRoute>} />
+        {/* AI Tutorial Routes */}
         <Route path="ai-tutorial" element={<ProtectedRoute><AiTutorialPage /></ProtectedRoute>} />
+        <Route path="onboarding" element={<ProtectedRoute>
+          <UserPreferencesProvider>
+            <Onboarding />
+          </UserPreferencesProvider>
+        </ProtectedRoute>} />
+        <Route path="dashboard" element={<ProtectedRoute>
+          <UserPreferencesProvider>
+            <Dashboard />
+          </UserPreferencesProvider>
+        </ProtectedRoute>} />
+        <Route path="lesson/:lessonId" element={<ProtectedRoute>
+          <UserPreferencesProvider>
+            <LessonProvider>
+              <Lesson />
+            </LessonProvider>
+          </UserPreferencesProvider>
+        </ProtectedRoute>} />
+        {/* End AI Tutorial Routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

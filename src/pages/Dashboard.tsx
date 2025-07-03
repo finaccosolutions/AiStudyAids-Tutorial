@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, BookOpen, User2, Settings, Clock, Target, Award, RefreshCw, Edit, Sparkles, ArrowRight, Rocket } from 'lucide-react';
-import { useUserPreferences } from '../contexts/UserPreferencesContext';
-import { useAuth } from '../contexts/AuthContext';
+import { Play, BookOpen, User2, Settings, Clock, Target, Award, RefreshCw, Edit, Sparkles, ArrowRight, Rocket, AlertCircle } from 'lucide-react'; // Added AlertCircle
+import { useUserPreferences } from '../components/contexts/UserPreferencesContext';
+import { useAuthStore } from '../store/useAuthStore'; // Changed import from useAuth to useAuthStore
 import geminiService, { Topic } from '../services/geminiService';
 import Onboarding from './Onboarding';
 
 const Dashboard: React.FC = () => {
   const { preferences, updatePreferences, savePreferences } = useUserPreferences();
-  const { geminiApiKey, user } = useAuth();
+  const { geminiApiKey, user } = useAuthStore(); // Changed useAuth to useAuthStore
   const navigate = useNavigate();
-  
+
   const [topics, setTopics] = useState<Topic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +31,10 @@ const Dashboard: React.FC = () => {
 
     if (!preferences?.subject || !preferences?.knowledgeLevel || !preferences?.language || !geminiApiKey) {
       setIsLoading(false);
+      // If API key is missing, set an error or redirect to API settings
+      if (!geminiApiKey && user) {
+        setError('Gemini API key is missing. Please set it in API Settings to generate content.');
+      }
       return;
     }
 
@@ -50,12 +54,12 @@ const Dashboard: React.FC = () => {
           preferences.language,
           preferences.learningGoals || []
         );
-        
+
         await updatePreferences({
           ...preferences,
           topics: newTopics
         });
-        
+
         setTopics(newTopics);
       } catch (error: any) {
         console.error('Error loading topics:', error);
@@ -66,7 +70,7 @@ const Dashboard: React.FC = () => {
     };
 
     loadTopics();
-  }, [preferences?.subject, preferences?.knowledgeLevel, preferences?.language, geminiApiKey]);
+  }, [preferences?.subject, preferences?.knowledgeLevel, preferences?.language, geminiApiKey, user]); // Added user to dependencies
 
   const handlePreferencesSave = async (newPreferences: any) => {
     setIsSaving(true);
@@ -78,6 +82,7 @@ const Dashboard: React.FC = () => {
       });
       await savePreferences();
       setShowPreferencesModal(false);
+      localStorage.setItem('showDashboardLoading', 'true'); // Trigger reload of topics
     } catch (error) {
       console.error('Error saving preferences:', error);
       setError('Failed to save preferences. Please try again.');
@@ -120,7 +125,7 @@ const Dashboard: React.FC = () => {
 
   if (showPreferencesModal) {
     return (
-      <Onboarding 
+      <Onboarding
         isEditing={true}
         onComplete={handlePreferencesSave}
         onCancel={() => setShowPreferencesModal(false)}
@@ -131,7 +136,7 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <motion.div 
+        <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +173,7 @@ const Dashboard: React.FC = () => {
                   Your personalized learning path in {preferences?.subject}
                 </p>
               </div>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -179,9 +184,9 @@ const Dashboard: React.FC = () => {
                 Edit Preferences
               </motion.button>
             </div>
-            
+
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-4 flex items-center border border-white/20 transition-all duration-300 hover:bg-white/20"
               >
@@ -191,8 +196,8 @@ const Dashboard: React.FC = () => {
                   <p className="font-semibold">{preferences?.subject}</p>
                 </div>
               </motion.div>
-              
-              <motion.div 
+
+              <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-4 flex items-center border border-white/20 transition-all duration-300 hover:bg-white/20"
               >
@@ -203,7 +208,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-4 flex items-center border border-white/20 transition-all duration-300 hover:bg-white/20"
               >
@@ -217,7 +222,7 @@ const Dashboard: React.FC = () => {
           </motion.div>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="container mx-auto max-w-6xl px-4 md:px-6 py-12">
         <div className="grid grid-cols-1 gap-8">
@@ -228,20 +233,28 @@ const Dashboard: React.FC = () => {
                 Your Learning Path
               </h2>
             </div>
-            
+
             {error ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-error-50 border border-error-200 text-error-700 p-6 rounded-xl mb-6 shadow-lg"
+                className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl mb-6 shadow-lg" // Changed to red for error
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-error-100 rounded-full flex items-center justify-center">
-                    <AlertCircle className="w-6 h-6 text-error-600" />
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"> {/* Changed to red */}
+                    <AlertCircle className="w-6 h-6 text-red-600" /> {/* Changed to red */}
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Error Loading Topics</h3>
                     <p>{error}</p>
+                    {error.includes('API key is missing') && (
+                      <button
+                        onClick={() => navigate('/api-settings')}
+                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Go to API Settings
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -265,7 +278,7 @@ const Dashboard: React.FC = () => {
                     <div className="relative p-6 bg-white/95 backdrop-blur-sm space-y-6">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div className="flex-grow">
-                          <motion.h3 
+                          <motion.h3
                             className={`text-2xl font-bold mb-3 bg-gradient-to-r ${getTopicColor(index)} bg-clip-text text-transparent`}
                           >
                             {topic.title}
@@ -286,21 +299,21 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        <motion.div 
+                        <motion.div
                           whileHover={{ scale: 1.05 }}
                           className="flex items-center bg-neutral-50 rounded-lg p-3 transition-all duration-300 hover:bg-neutral-100 hover:shadow-md"
                         >
                           <Clock className="h-5 w-5 text-primary-600 mr-3" />
                           <span className="text-neutral-700">{topic.estimatedDuration} minutes</span>
                         </motion.div>
-                        <motion.div 
+                        <motion.div
                           whileHover={{ scale: 1.05 }}
                           className={`flex items-center rounded-lg p-3 ${getDifficultyColor(topic.difficulty)} transition-all duration-300 hover:shadow-md`}
                         >
                           <Award className="h-5 w-5 mr-3" />
                           <span>{topic.difficulty}</span>
                         </motion.div>
-                        <motion.div 
+                        <motion.div
                           whileHover={{ scale: 1.05 }}
                           className="flex items-center bg-neutral-50 rounded-lg p-3 transition-all duration-300 hover:bg-neutral-100 hover:shadow-md"
                         >

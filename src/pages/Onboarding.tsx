@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronLeft, BookOpen, User, Globe, Target, GraduationCap as Graduation } from 'lucide-react';
-import { useUserPreferences, KnowledgeLevel, Language } from '../contexts/UserPreferencesContext';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useUserPreferences, KnowledgeLevel, Language } from '../components/contexts/UserPreferencesContext';
+import { useAuthStore } from '../store/useAuthStore'; // Changed import from useAuth to useAuthStore
+import { supabase } from '../services/supabase'; // Ensure this import is correct
 
 interface OnboardingProps {
   isEditing?: boolean;
@@ -20,14 +20,14 @@ const steps = [
 ];
 
 const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, onCancel }) => {
-  const { user, geminiApiKey } = useAuth();
+  const { user, geminiApiKey } = useAuthStore(); // Changed useAuth to useAuthStore
   const { preferences, updatePreferences, savePreferences } = useUserPreferences();
   const navigate = useNavigate();
-  
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Form state
   const [subject, setSubject] = useState(preferences?.subject || '');
   const [knowledgeLevel, setKnowledgeLevel] = useState<KnowledgeLevel>(preferences?.knowledgeLevel || 'beginner');
@@ -41,7 +41,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
       navigate('/dashboard');
     }
   }, [preferences, navigate, isEditing]);
-  
+
   // Common goals options
   const commonGoals = [
     'Master the fundamentals',
@@ -51,16 +51,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
     'Personal interest',
     'Academic requirements',
   ];
-  
+
   // Handle goal selection
   const toggleGoal = (goal: string) => {
-    setLearningGoals(prev => 
-      prev.includes(goal) 
-        ? prev.filter(g => g !== goal) 
+    setLearningGoals(prev =>
+      prev.includes(goal)
+        ? prev.filter(g => g !== goal)
         : [...prev, goal]
     );
   };
-  
+
   // Add custom goal
   const addCustomGoal = () => {
     if (customGoal.trim() && !learningGoals.includes(customGoal.trim())) {
@@ -68,7 +68,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
       setCustomGoal('');
     }
   };
-  
+
   // Navigation functions
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -77,7 +77,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
       completeOnboarding();
     }
   };
-  
+
   const prevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
@@ -85,7 +85,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
       onCancel();
     }
   };
-  
+
   // Validation for each step
   const canProceed = () => {
     switch (currentStep) {
@@ -101,14 +101,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
         return false;
     }
   };
-  
+
   // Complete onboarding
   const completeOnboarding = async () => {
     if (!user) return;
-    
+
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
       const newPreferences = {
         subject,
@@ -136,19 +136,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
         await savePreferences();
 
         // Check if API key exists
-        const { data: userData, error: userError } = await supabase
-          .from('users')
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('api_keys')
           .select('gemini_api_key')
-          .eq('id', user.id)
-          .single();
+          .eq('user_id', user.id)
+          .maybeSingle(); // Use maybeSingle as it might not exist
 
-        if (userError) {
-          throw userError;
+        if (apiKeyError) {
+          throw apiKeyError;
         }
 
         // Navigate based on API key existence
-        if (!userData?.gemini_api_key) {
-          navigate('/api-key-setup');
+        if (!apiKeyData?.gemini_api_key) {
+          navigate('/api-settings'); // Redirect to API settings if key is missing
         } else {
           localStorage.setItem('showDashboardLoading', 'true');
           navigate('/dashboard');
@@ -185,13 +185,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                 />
               </div>
             </div>
-            
+
             <div className="text-sm text-neutral-500">
               <p>Examples: Machine Learning, Spanish Language, World History, Digital Marketing, etc.</p>
             </div>
           </div>
         );
-      
+
       case 1: // Knowledge Level
         return (
           <div>
@@ -199,12 +199,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
               <label className="block text-sm font-medium text-neutral-700">
                 Your Current Knowledge Level
               </label>
-              
+
               {/* Beginner */}
               <div
                 className={`flex items-start p-4 border ${
-                  knowledgeLevel === 'beginner' 
-                    ? 'border-primary-500 bg-primary-50' 
+                  knowledgeLevel === 'beginner'
+                    ? 'border-primary-500 bg-primary-50'
                     : 'border-neutral-200 hover:border-primary-200'
                 } rounded-lg transition-colors cursor-pointer`}
                 onClick={() => setKnowledgeLevel('beginner')}
@@ -223,12 +223,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                   <p className="text-sm text-neutral-600">Little to no prior knowledge. Starting from scratch.</p>
                 </div>
               </div>
-              
+
               {/* Intermediate */}
               <div
                 className={`flex items-start p-4 border ${
-                  knowledgeLevel === 'intermediate' 
-                    ? 'border-primary-500 bg-primary-50' 
+                  knowledgeLevel === 'intermediate'
+                    ? 'border-primary-500 bg-primary-50'
                     : 'border-neutral-200 hover:border-primary-200'
                 } rounded-lg transition-colors cursor-pointer`}
                 onClick={() => setKnowledgeLevel('intermediate')}
@@ -247,12 +247,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                   <p className="text-sm text-neutral-600">Familiar with basics but seeking deeper understanding.</p>
                 </div>
               </div>
-              
+
               {/* Advanced */}
               <div
                 className={`flex items-start p-4 border ${
-                  knowledgeLevel === 'advanced' 
-                    ? 'border-primary-500 bg-primary-50' 
+                  knowledgeLevel === 'advanced'
+                    ? 'border-primary-500 bg-primary-50'
                     : 'border-neutral-200 hover:border-primary-200'
                 } rounded-lg transition-colors cursor-pointer`}
                 onClick={() => setKnowledgeLevel('advanced')}
@@ -274,7 +274,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
             </div>
           </div>
         );
-      
+
       case 2: // Language
         return (
           <div>
@@ -305,13 +305,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                 </div>
               </div>
             </div>
-            
+
             <div className="text-sm text-neutral-500">
               <p>Content and AI responses will be provided in your selected language.</p>
             </div>
           </div>
         );
-      
+
       case 3: // Learning Goals
         return (
           <div>
@@ -319,14 +319,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
               <label className="block text-sm font-medium text-neutral-700 mb-3">
                 Select Your Learning Goals
               </label>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 {commonGoals.map(goal => (
                   <div
                     key={goal}
                     className={`flex items-center p-3 border ${
-                      learningGoals.includes(goal) 
-                        ? 'border-primary-500 bg-primary-50 text-primary-700' 
+                      learningGoals.includes(goal)
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
                         : 'border-neutral-200 hover:border-primary-200'
                     } rounded-lg transition-colors cursor-pointer`}
                     onClick={() => toggleGoal(goal)}
@@ -344,7 +344,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                   </div>
                 ))}
               </div>
-              
+
               <div className="mt-6 mb-4">
                 <label htmlFor="customGoal" className="block text-sm font-medium text-neutral-700 mb-1">
                   Add a Custom Goal (Optional)
@@ -373,7 +373,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                   </button>
                 </div>
               </div>
-              
+
               {/* Show selected goals */}
               {learningGoals.length > 0 && (
                 <div className="mt-4">
@@ -400,7 +400,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -438,7 +438,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
                   {step.title}
                 </span>
               </div>
-              
+
               {/* Connector line */}
               {index < steps.length - 1 && (
                 <div className={`flex-1 h-0.5 mx-2 ${
@@ -451,7 +451,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
       </div>
     );
   };
-  
+
   return (
     <div className="min-h-screen bg-neutral-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -461,16 +461,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
             {isEditing ? 'Update Your Learning Preferences' : 'Set Up Your Learning Journey'}
           </h1>
           <p className="mt-2 text-neutral-600">
-            {isEditing 
+            {isEditing
               ? 'Modify your preferences to better suit your learning needs'
               : 'Tell us about yourself so we can personalize your learning experience'
             }
           </p>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-8">
           <Progress />
-          
+
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-neutral-800 mb-2">
               {steps[currentStep].title}
@@ -479,7 +479,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
               {steps[currentStep].description}
             </p>
           </div>
-          
+
           <motion.div
             key={currentStep}
             initial={{ opacity: 0, x: 20 }}
@@ -496,7 +496,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
               <p className="text-error-700">{error}</p>
             </div>
           )}
-          
+
           <div className="flex justify-between mt-8">
             <button
               type="button"
@@ -506,7 +506,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
               <ChevronLeft className="h-5 w-5 mr-1" />
               {currentStep === 0 && isEditing ? 'Cancel' : 'Back'}
             </button>
-            
+
             <button
               type="button"
               onClick={nextStep}
@@ -518,14 +518,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ isEditing = false, onComplete, 
               {isSubmitting ? (
                 <span className="inline-block h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
               ) : null}
-              
+
               {currentStep < steps.length - 1 ? (
                 <>
                   Next
                   <ChevronRight className="h-5 w-5 ml-1" />
                 </>
               ) : (
-                isEditing ? 
+                isEditing ?
                 'Save Changes' :
                 'Complete Setup'
               )}

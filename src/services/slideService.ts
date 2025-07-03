@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { speak, stopSpeaking } from './voiceService';
 
-export interface Slide {
+export interface Slide { 
   id: string;
   content: string;
   narration: string;
@@ -84,7 +84,7 @@ class SlideService {
         }
       }
 
-      if (typeof slide.duration !== 'number' || slide.duration < 0) {
+      if (typeof slide.duration !== 'number' || slide.duration < 0) { 
         throw new Error(`Invalid slide format at index ${index}: duration must be a positive number`);
       }
     }

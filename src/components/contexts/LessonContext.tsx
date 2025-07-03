@@ -1,6 +1,8 @@
+// src/components/contexts/LessonContext.tsx
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useUserPreferences } from './UserPreferencesContext';
-import geminiService, { Topic } from '../services/geminiService';
+import geminiService, { Topic } from '../../services/geminiService'; // Corrected import path
+import { useAuthStore } from '../../store/useAuthStore';
 
 // Types
 export interface Lesson {
@@ -42,6 +44,7 @@ const LessonContext = createContext<LessonContextType | undefined>(undefined);
 
 export const LessonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { preferences } = useUserPreferences();
+  const { geminiApiKey } = useAuthStore();
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +92,7 @@ export const LessonProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toggleListening = () => setIsListening(prev => !prev);
 
   const askQuestion = useCallback(async (question: string) => {
-    if (!currentTopic || !preferences?.subject) return;
+    if (!currentTopic || !preferences?.subject || !geminiApiKey) return;
     
     setCurrentQuestion(question);
     setCurrentAnswer(null);
@@ -126,7 +129,7 @@ export const LessonProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error('Error getting answer:', error);
       setCurrentAnswer('Sorry, I couldn\'t process that question. Please try again.');
     }
-  }, [currentTopic, preferences, currentLesson]);
+  }, [currentTopic, preferences, currentLesson, geminiApiKey]);
 
   return (
     <LessonContext.Provider value={{

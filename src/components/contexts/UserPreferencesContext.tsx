@@ -1,6 +1,7 @@
+// src/components/contexts/UserPreferencesContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
-import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../../store/useAuthStore'; // Changed import from useAuth to useAuthStore
+import { supabase } from '../../services/supabase'; // Corrected import path
 
 // Types
 export type KnowledgeLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -36,7 +37,7 @@ const UserPreferencesContext = createContext<UserPreferencesContextType | undefi
 
 // Provider component
 export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user } = useAuthStore(); // Changed useAuth to useAuthStore
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
 
   // Load preferences when user changes

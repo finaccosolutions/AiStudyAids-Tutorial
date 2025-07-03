@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Volume2, VolumeX, MessageSquare, X, AlertCircle, Brain } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useUserPreferences } from '../contexts/UserPreferencesContext';
-import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/useAuthStore'; // Changed import from useAuth to useAuthStore
+import { useUserPreferences } from '../components/contexts/UserPreferencesContext';
+import { supabase } from '../services/supabase'; // Ensure this import is correct
 import geminiService from '../services/geminiService';
 import slideService from '../services/slideService';
 import SlidePresentation from '../components/tutorial/SlidePresentation';
@@ -14,9 +14,9 @@ import type { SlidePresentation as SlidePresentationType } from '../services/sli
 const Lesson: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const { preferences } = useUserPreferences();
-  const { geminiApiKey, user } = useAuth();
+  const { geminiApiKey, user } = useAuthStore(); // Changed useAuth to useAuthStore
   const navigate = useNavigate();
-  
+
   const [presentation, setPresentation] = useState<SlidePresentationType | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,7 +43,7 @@ const Lesson: React.FC = () => {
     if (storedTopic) {
       setSelectedTopic(JSON.parse(storedTopic));
     } else {
-      navigate('/dashboard');
+      navigate('/ai-tutorial'); // Redirect to AI tutorial entry if no topic selected
       return;
     }
   }, [navigate]);
@@ -51,6 +51,15 @@ const Lesson: React.FC = () => {
   useEffect(() => {
     const loadPresentation = async () => {
       if (!selectedTopic || !preferences?.subject || !preferences?.knowledgeLevel || !geminiApiKey || !user) {
+        // If any critical data is missing, set an error and stop loading
+        if (!geminiApiKey) {
+          setError('Gemini API key is missing. Please set it in API Settings.');
+        } else if (!user) {
+          setError('User not authenticated.');
+        } else if (!preferences?.subject || !preferences?.knowledgeLevel) {
+          setError('User preferences are incomplete. Please update them in the dashboard.');
+        }
+        setIsLoading(false);
         return;
       }
 
@@ -121,8 +130,8 @@ const Lesson: React.FC = () => {
   };
 
   const handleAskQuestion = async () => {
-    if (!question.trim() || !selectedTopic) return;
-    
+    if (!question.trim() || !selectedTopic || !user || !geminiApiKey) return; // Added user and geminiApiKey check
+
     setIsAnswering(true);
     setAnswer(null);
 
@@ -134,6 +143,26 @@ const Lesson: React.FC = () => {
         preferences?.language || 'english'
       );
       setAnswer(response);
+
+      // Save to chat history
+      await supabase
+        .from('quiz_chat_history') // Changed to quiz_chat_history table
+        .insert({
+          user_id: user.id,
+          content: question,
+          type: 'user',
+          context: { topic: selectedTopic.title, level: preferences?.knowledgeLevel }
+        });
+
+      await supabase
+        .from('quiz_chat_history') // Changed to quiz_chat_history table
+        .insert({
+          user_id: user.id,
+          content: response,
+          type: 'assistant',
+          context: { topic: selectedTopic.title, level: preferences?.knowledgeLevel }
+        });
+
     } catch (error: any) {
       console.error('Error getting answer:', error);
       setAnswer('Sorry, I couldn\'t process your question. Please try again.');
@@ -148,7 +177,7 @@ const Lesson: React.FC = () => {
       <div className="bg-white border-b border-neutral-200 py-4 shadow-sm">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center">
-            <button 
+            <button
               onClick={() => navigate('/dashboard')}
               className="flex items-center text-neutral-700 hover:text-primary-600 transition-colors"
             >
@@ -156,7 +185,7 @@ const Lesson: React.FC = () => {
               <span className="font-medium">Back to Dashboard</span>
             </button>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setShowQuiz(true)}
@@ -199,7 +228,7 @@ const Lesson: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-3xl font-bold text-neutral-800 mb-8">{selectedTopic?.title}</h1>
-            
+
             <div className="space-y-8">
               {isLoading ? (
                 <div className="min-h-[60vh] flex items-center justify-center">
@@ -214,7 +243,7 @@ const Lesson: React.FC = () => {
                   <div className="max-w-lg mx-auto px-4 py-8 text-center">
                     <div className="bg-white rounded-lg shadow-lg p-8 border border-neutral-200">
                       <div className="flex items-center justify-center mb-6">
-                        <AlertCircle className="h-12 w-12 text-error-500" />
+                        <AlertCircle className="h-12 w-12 text-red-500" /> {/* Changed to red */}
                       </div>
                       <h2 className="text-2xl font-semibold text-neutral-800 mb-4">Unable to Load Lesson</h2>
                       <p className="text-neutral-600 mb-6">{error}</p>
@@ -226,12 +255,22 @@ const Lesson: React.FC = () => {
                           <ArrowLeft className="h-5 w-5 mr-2" />
                           Back to Dashboard
                         </button>
-                        <button
-                          onClick={() => window.location.reload()}
-                          className="btn btn-primary"
-                        >
-                          Try Again
-                        </button>
+                        {error.includes('API key is missing') && (
+                          <button
+                            onClick={() => navigate('/api-settings')}
+                            className="btn btn-primary"
+                          >
+                            Go to API Settings
+                          </button>
+                        )}
+                        {!error.includes('API key is missing') && (
+                          <button
+                            onClick={() => window.location.reload()}
+                            className="btn btn-primary"
+                          >
+                            Try Again
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

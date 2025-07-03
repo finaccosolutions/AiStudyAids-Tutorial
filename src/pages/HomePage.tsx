@@ -2,9 +2,9 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { Button } from '../components/ui/Button';
-import { 
-  Brain, GraduationCap, 
-  FileQuestion, PenTool, BookOpen, Calendar, 
+import {
+  Brain, GraduationCap,
+  FileQuestion, PenTool, BookOpen, Calendar,
   LineChart, Rocket, Target,
   Award, Users, Zap, CheckCircle, Star,
   TrendingUp, Shield, Globe, Sparkles,
@@ -55,7 +55,7 @@ const HomePage: React.FC = () => {
       title: 'AI Tutorial',
       description: 'Learn complex topics with interactive AI-guided tutorials and explanations.',
       icon: Lightbulb,
-      path: '/ai-tutorial',
+      path: '/ai-tutorial', // Changed path to /ai-tutorial
       gradient: 'from-yellow-500 via-amber-500 to-orange-600',
       hoverGradient: 'hover:from-yellow-600 hover:via-amber-600 hover:to-orange-700',
       shadowColor: 'shadow-yellow-500/25',
@@ -192,7 +192,7 @@ const HomePage: React.FC = () => {
     { icon: Target, value: '50M+', label: 'Questions Solved', gradient: 'from-green-500 to-emerald-500' },
     { icon: Award, value: '95%', label: 'Success Rate', gradient: 'from-orange-500 to-red-500' }
   ];
-  
+
   return (
     <div className="flex flex-col items-center bg-white">
       {/* Hero Section */}
@@ -202,7 +202,7 @@ const HomePage: React.FC = () => {
           <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-200/30 to-pink-200/30 rounded-full blur-3xl animate-pulse" />
           <div className="absolute top-20 -right-20 w-60 h-60 bg-gradient-to-r from-blue-200/30 to-cyan-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
           <div className="absolute bottom-20 left-20 w-40 h-40 bg-gradient-to-r from-green-200/30 to-teal-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
-          
+
           {/* Floating Elements */}
           <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-purple-400/20 rounded-full animate-bounce" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-blue-400/20 rounded-full animate-bounce" style={{ animationDelay: '2s' }} />
@@ -217,12 +217,12 @@ const HomePage: React.FC = () => {
             className="flex justify-center mb-8 relative"
           >
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, 10, -10, 0],
                 scale: [1, 1.1, 1]
               }}
-              transition={{ 
-                duration: 4, 
+              transition={{
+                duration: 4,
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
@@ -232,7 +232,7 @@ const HomePage: React.FC = () => {
                 <GraduationCap className="h-12 w-12 sm:h-14 sm:w-14 text-white" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-purple-400/50 to-blue-400/50 rounded-3xl blur-xl animate-pulse" />
-              
+
               {/* Orbiting Elements */}
               <motion.div
                 animate={{ rotate: 360 }}
@@ -245,8 +245,8 @@ const HomePage: React.FC = () => {
               </motion.div>
             </motion.div>
           </motion.div>
-          
-          <motion.h1 
+
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -257,14 +257,14 @@ const HomePage: React.FC = () => {
               Learning Companion
             </span>
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-xl sm:text-2xl text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed"
           >
-            Transform your learning experience with intelligent study tools. 
+            Transform your learning experience with intelligent study tools.
             Get personalized guidance, instant feedback, and comprehensive analytics.
           </motion.p>
 
@@ -311,9 +311,9 @@ const HomePage: React.FC = () => {
               key={aid.path}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }} 
-              whileHover={{ 
-                scale: 1.05, 
+              transition={{ delay: index * 0.1 }}
+              whileHover={{
+                scale: 1.05,
                 y: -10,
                 rotateY: 5,
                 rotateX: 5
@@ -332,10 +332,10 @@ const HomePage: React.FC = () => {
 
               {/* Background Pattern */}
               <div className={`absolute inset-0 ${aid.pattern} opacity-50 group-hover:opacity-70 transition-opacity duration-500`} />
-              
+
               {/* Gradient Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-br ${aid.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
-              
+
                {/* Floating Particles */}
             <div className="absolute inset-0 overflow-hidden">
               {[...Array(6)].map((_, i) => (
@@ -358,17 +358,17 @@ const HomePage: React.FC = () => {
                 />
               ))}
             </div>
-              
+
               <div className="relative z-10">
                 <div className={`${aid.iconBg} p-4 rounded-2xl w-fit mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg relative overflow-hidden`}>
                   <aid.icon className="h-8 w-8 text-white relative z-10" />
                   <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                
+
                 <h3 className="text-2xl font-bold mb-4 text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-purple-600 group-hover:to-indigo-600 transition-all duration-300">
                   {aid.title}
                 </h3>
-                
+
                 <p className="text-gray-600 mb-6 leading-relaxed group-hover:text-gray-700 transition-colors duration-300">
                   {aid.description}
                 </p>
@@ -520,7 +520,7 @@ const HomePage: React.FC = () => {
           <div className="relative z-10 text-center">
             <h2 className="text-3xl sm:text-5xl font-bold mb-6">Ready to Transform Your Learning?</h2>
             <p className="text-purple-100 mb-8 max-w-2xl mx-auto text-lg sm:text-xl leading-relaxed">
-              Join thousands of students who are already experiencing the power of AI-assisted learning. 
+              Join thousands of students who are already experiencing the power of AI-assisted learning.
               Start your journey today and unlock your full potential.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
