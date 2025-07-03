@@ -100,6 +100,171 @@ export const saveApiKey = async (userId: string, apiKey: string) => {
   }
 };
 
+// User Preferences functions for AI Tutorial
+export const getUserPreferences = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching user preferences:', error);
+      throw error;
+    }
+
+    if (!data) return null;
+
+    return {
+      subject: data.subject || '',
+      knowledgeLevel: data.knowledge_level || 'beginner',
+      language: data.language || 'English',
+      learningGoals: data.learning_goals || [],
+      onboardingCompleted: data.onboarding_completed || false,
+      topics: data.topics || []
+    };
+  } catch (error) {
+    console.error('getUserPreferences error:', error);
+    throw error;
+  }
+};
+
+export const saveUserPreferences = async (userId: string, preferences: any) => {
+  try {
+    const prefsData = {
+      user_id: userId,
+      subject: preferences.subject,
+      knowledge_level: preferences.knowledgeLevel,
+      language: preferences.language,
+      learning_goals: preferences.learningGoals,
+      onboarding_completed: preferences.onboardingCompleted,
+      topics: preferences.topics || []
+    };
+
+    // Check if preferences exist
+    const { data: existingPrefs, error: checkError } = await supabase
+      .from('user_preferences')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+
+    // Clear presentation cache first
+    const { error: clearError } = await supabase
+      .from('presentation_cache')
+      .delete()
+      .eq('user_id', userId);
+
+    if (clearError) throw clearError;
+
+    let error;
+
+    if (existingPrefs) {
+      // Update existing preferences
+      ({ error } = await supabase
+        .from('user_preferences')
+        .update(prefsData)
+        .eq('user_id', userId));
+    } else {
+      // Insert new preferences
+      ({ error } = await supabase
+        .from('user_preferences')
+        .insert([prefsData]));
+    }
+
+    if (error) throw error;
+    return { data: prefsData, error: null };
+  } catch (error) {
+    console.error('saveUserPreferences error:', error);
+    throw error;
+  }
+};
+
+// Chat History functions for AI Tutorial
+export const getChatHistory = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching chat history:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('getChatHistory error:', error);
+    throw error;
+  }
+};
+
+export const saveChatMessage = async (userId: string, question: string, answer: string) => {
+  try {
+    const { error } = await supabase
+      .from('chat_history')
+      .insert({
+        user_id: userId,
+        question,
+        answer
+      });
+
+    if (error) {
+      console.error('Error saving chat message:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('saveChatMessage error:', error);
+    throw error;
+  }
+};
+
+// Presentation Cache functions
+export const getPresentationCache = async (userId: string, topicId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('presentation_cache')
+      .select('presentation_data')
+      .eq('user_id', userId)
+      .eq('topic_id', topicId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching presentation cache:', error);
+      throw error;
+    }
+
+    return data?.presentation_data || null;
+  } catch (error) {
+    console.error('getPresentationCache error:', error);
+    throw error;
+  }
+};
+
+export const savePresentationCache = async (userId: string, topicId: string, presentationData: any) => {
+  try {
+    const { error } = await supabase
+      .from('presentation_cache')
+      .upsert({
+        user_id: userId,
+        topic_id: topicId,
+        presentation_data: presentationData
+      });
+
+    if (error) {
+      console.error('Error saving presentation cache:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('savePresentationCache error:', error);
+    throw error;
+  }
+};
+
 // New function to get a single competition result by competition_id and user_id
 export const getCompetitionResultByCompetitionAndUser = async (competitionId: string, userId: string): Promise<any | null> => {
   try {
@@ -836,4 +1001,3 @@ export const deleteQuizResult = async (quizResultId: string) => {
     throw error;
   }
 };
-
